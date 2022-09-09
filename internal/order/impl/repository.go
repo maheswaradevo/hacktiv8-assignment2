@@ -28,7 +28,6 @@ var (
 )
 
 func (o orderRepositoryImpl) CreateNewOrder(ctx context.Context, reqDataOrder entity.Orders, reqDataItems entity.AllItems) (uint64, error) {
-	queryOrder := INSERT_ORDER_DATA
 	tx, err := o.db.BeginTx(ctx, nil)
 	if err != nil {
 		log.Printf("[CreateNewOrder] failed to begin transaction, err => %v", err)
@@ -36,12 +35,7 @@ func (o orderRepositoryImpl) CreateNewOrder(ctx context.Context, reqDataOrder en
 	}
 	defer tx.Rollback()
 
-	// stmt, err := tx.PrepareContext(ctx, queryOrder)
-	// if err != nil {
-	// 	log.Printf("[CreateNewOrder] failed to prepare the statement, err => %v", err)
-	// 	return err
-	// }
-
+	queryOrder := INSERT_ORDER_DATA
 	res, err := tx.ExecContext(ctx, queryOrder, reqDataOrder.CustomerName)
 	if err != nil {
 		log.Printf("[CreateNewOrder] failed to insert order data, err => %v", err)
