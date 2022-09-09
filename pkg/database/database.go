@@ -4,13 +4,17 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+
+	"github.com/maheswaradevo/hacktiv8-assignment2/internal/global/config"
 )
 
-func GetDatabase(dbAddress string, dbUsername string, dbPassword string, dbName string) *sql.DB {
+func GetDatabase() *sql.DB {
 	log.Printf("INFO GetDatabase database connection: starting database connection process")
 
+	cfg := config.GetConfig()
+
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true",
-		dbUsername, dbPassword, dbAddress, dbName)
+		cfg.Database.Username, cfg.Database.Password, cfg.Database.Address, cfg.Database.Name)
 
 	db, err := sql.Open("mysql", dataSourceName)
 	if err != nil {
