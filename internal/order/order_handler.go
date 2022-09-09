@@ -38,10 +38,10 @@ func (o *OrderHandler) CreateNewOrder() http.HandlerFunc {
 			log.Printf("[StoreNewProduct] failed to parse JSON data, err => %+v", err)
 			panic(err)
 		}
-		err = o.os.CreateNewOrder(r.Context(), &data)
+		res, err := o.os.CreateNewOrder(r.Context(), &data)
 		if err != nil {
 			panic(err)
 		}
-		utils.NewBaseResponse(http.StatusOK, "Success Insert New Order", nil, nil).SendResponse(&w)
+		utils.NewBaseResponse(http.StatusOK, "Success Insert New Order", nil, res).SendResponse(&w)
 	}
 }

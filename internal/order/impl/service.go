@@ -17,12 +17,13 @@ func ProvideOrderService(repo OrderRepository) *orderServiceImpl {
 	}
 }
 
-func (o orderServiceImpl) CreateNewOrder(ctx context.Context, data *dto.CreateOrderRequest) error {
+func (o orderServiceImpl) CreateNewOrder(ctx context.Context, data *dto.CreateOrderRequest) (*dto.OrderResponse, error) {
 	item, order := data.ToEntity()
-	err := o.repo.CreateNewOrder(ctx, order, item)
+	orderID, err := o.repo.CreateNewOrder(ctx, order, item)
 	if err != nil {
 		log.Printf("[CreateNewOrder] an error occured while creating new order, err => %v", err)
-		return nil
+		return nil, err
 	}
-	return nil
+
+	return dto.CreateOrderResponseDetail(order, item, orderID), nil
 }

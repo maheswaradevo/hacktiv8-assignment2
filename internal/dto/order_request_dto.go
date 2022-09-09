@@ -13,7 +13,6 @@ type ItemRequest struct {
 	ItemCode    string `json:"item_code"`
 	Description string `json:"description"`
 	Quantity    uint64 `json:"quantity"`
-	OrderID     uint64 `json:"order_id"`
 }
 
 type ItemsRequest []ItemRequest
@@ -25,7 +24,6 @@ func (dto *CreateOrderRequest) ToEntity() (item entity.AllItems, order entity.Or
 			ItemCode:    items.ItemCode,
 			Description: items.Description,
 			Quantity:    items.Quantity,
-			OrderID:     items.OrderID,
 		}
 		item = append(item, &itemsDetail)
 	}
