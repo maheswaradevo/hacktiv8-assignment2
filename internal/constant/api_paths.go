@@ -2,5 +2,5 @@ package constant
 
 var (
 	PING_API_PATH  = "/ping"
-	ORDER_API_PATH = "/order"
+	ORDER_API_PATH = "/orders"
 )
