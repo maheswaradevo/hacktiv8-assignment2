@@ -20,12 +20,83 @@ func ProvideOrderRepository(db *sql.DB) *orderRepositoryImpl {
 
 type OrderRepository interface {
 	CreateNewOrder(ctx context.Context, reqDataOrder entity.Orders, reqDataItems entity.AllItems) (uint64, error)
+	ViewAllOrders(ctx context.Context) (entity.OrdersJoined, error)
 }
 
 var (
 	INSERT_ORDER_DATA = "INSERT INTO `order` (customer_name) VALUES (?)"
 	INSERT_ITEM_DATA  = "INSERT INTO `item` (item_code, description, quantity, order_id) VALUES(?, ?, ?, ?)"
+	SELECT_ORDERS     = "SELECT o.order_id, o.customer_name, o.created_at, o.updated_at FROM `order` o"
+	SELECT_ITEMS      = "SELECT i. item_id, i.item_code, i.description, i.quantity, i.order_id FROM `item` i WHERE i.order_id=?"
+	COUNT_ORDERS      = "SELECT COUNT(*) FROM order"
 )
+
+func (o orderRepositoryImpl) ViewAllOrders(ctx context.Context) (entity.OrdersJoined, error) {
+	query := SELECT_ORDERS
+
+	stmt, err := o.db.PrepareContext(ctx, query)
+	if err != nil {
+		log.Printf("[ViewAllOrders] failed to prepare the statement, err => %v", err)
+		return nil, err
+	}
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		log.Printf("[ViewAllOrders] failed to query to the database, err => %v", err)
+		return nil, err
+	}
+
+	var ordersJoined entity.OrdersJoined
+
+	for rows.Next() {
+		orderItemJoined := entity.OrdersItemsJoined{}
+
+		err := rows.Scan(
+			&orderItemJoined.Orders.OrderID,
+			&orderItemJoined.Orders.CustomerName,
+			&orderItemJoined.Orders.CreatedAt,
+			&orderItemJoined.Orders.UpdatedAt,
+		)
+		if err != nil {
+			log.Printf("[ViewAllOrders] failed to scan data from database, err => %v", err)
+			return nil, err
+		}
+
+		ordersJoined = append(ordersJoined, &orderItemJoined)
+	}
+	query = SELECT_ITEMS
+	for idx, items := range ordersJoined {
+
+		stmt, err = o.db.PrepareContext(ctx, query)
+		if err != nil {
+			log.Printf("[ViewAllOrders] failed to prepare the statement, err => %v", err)
+			return nil, err
+		}
+		rows, err := stmt.QueryContext(ctx, ordersJoined[idx].Orders.OrderID)
+		if err != nil {
+			log.Printf("[ViewAllOrders] failed to query to the database, err => %v", err)
+			return nil, err
+		}
+
+		for rows.Next() {
+			allItems := entity.Items{}
+
+			err = rows.Scan(
+				&allItems.ItemId,
+				&allItems.ItemCode,
+				&allItems.Description,
+				&allItems.Quantity,
+				&allItems.OrderID,
+			)
+			if err != nil {
+				log.Printf("[ViewAllOrders] failed to scan data from database, err => %v", err)
+				return nil, err
+			}
+
+			items.Items = append(items.Items, &allItems)
+		}
+	}
+	return ordersJoined, nil
+}
 
 func (o orderRepositoryImpl) CreateNewOrder(ctx context.Context, reqDataOrder entity.Orders, reqDataItems entity.AllItems) (uint64, error) {
 	tx, err := o.db.BeginTx(ctx, nil)

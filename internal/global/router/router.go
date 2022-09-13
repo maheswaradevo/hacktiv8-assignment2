@@ -10,7 +10,7 @@ import (
 )
 
 func Init(router *mux.Router, db *sql.DB) {
-	webRouter := router.NewRoute().PathPrefix("/v1").Subrouter()
+	webRouter := router.NewRoute().PathPrefix("/api/v1").Subrouter()
 
 	pingService := ping.NewPingService()
 	pingController := ping.NewPingHandler(webRouter, pingService)

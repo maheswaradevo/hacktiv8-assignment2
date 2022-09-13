@@ -21,7 +21,7 @@ type Items struct {
 
 type OrdersItemsJoined struct {
 	Orders
-	Items
+	Items AllItems
 }
 
 type OrdersJoined []*OrdersItemsJoined

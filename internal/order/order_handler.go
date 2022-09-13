@@ -21,6 +21,7 @@ func (o *OrderHandler) InitHandler() {
 
 	//Order
 	routes.HandleFunc("", o.CreateNewOrder()).Methods(http.MethodPost)
+	routes.HandleFunc("", o.ViewAllOrders()).Methods(http.MethodGet)
 }
 
 func ProvideOrderHandler(r *mux.Router, os OrderService) *OrderHandler {
@@ -40,8 +41,18 @@ func (o *OrderHandler) CreateNewOrder() http.HandlerFunc {
 		}
 		res, err := o.os.CreateNewOrder(r.Context(), &data)
 		if err != nil {
-			panic(err)
+			utils.NewErrorResponse(http.StatusInternalServerError, "Internal Server Error", utils.NewErrorResponseValue("Internal Server Error", err.Error())).SendResponse(&w)
 		}
 		utils.NewBaseResponse(http.StatusOK, "Success Insert New Order", nil, res).SendResponse(&w)
+	}
+}
+
+func (o *OrderHandler) ViewAllOrders() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		res, err := o.os.ViewAllOrders(r.Context())
+		if err != nil {
+			panic(utils.NewErrorResponse(http.StatusInternalServerError, "Internal Server Error", utils.NewErrorResponseValue("Internal Server Error", err.Error())))
+		}
+		utils.NewBaseResponse(http.StatusOK, "Success", nil, res).SendResponse(&w)
 	}
 }

@@ -27,3 +27,17 @@ func (o orderServiceImpl) CreateNewOrder(ctx context.Context, data *dto.CreateOr
 
 	return dto.CreateOrderResponseDetail(order, item, orderID), nil
 }
+
+func (o orderServiceImpl) ViewAllOrders(ctx context.Context) (*dto.OrderDetails, error) {
+	res, err := o.repo.ViewAllOrders(ctx)
+	if err != nil {
+		log.Printf("[ViewAllOrders] an error occured while show all the orders, err => %v", err)
+		return nil, err
+	}
+
+	var response1 dto.OrderDetails
+	response := dto.ViewOrderResponseDetails(res)
+	response1 = append(response1, response...)
+
+	return &response1, nil
+}
