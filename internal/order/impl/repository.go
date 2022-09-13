@@ -21,6 +21,7 @@ func ProvideOrderRepository(db *sql.DB) *orderRepositoryImpl {
 type OrderRepository interface {
 	CreateNewOrder(ctx context.Context, reqDataOrder entity.Orders, reqDataItems entity.AllItems) (uint64, error)
 	ViewAllOrders(ctx context.Context) (entity.OrdersJoined, error)
+	CheckOrders(ctx context.Context) (int, error)
 }
 
 var (
@@ -28,8 +29,37 @@ var (
 	INSERT_ITEM_DATA  = "INSERT INTO `item` (item_code, description, quantity, order_id) VALUES(?, ?, ?, ?)"
 	SELECT_ORDERS     = "SELECT o.order_id, o.customer_name, o.created_at, o.updated_at FROM `order` o"
 	SELECT_ITEMS      = "SELECT i. item_id, i.item_code, i.description, i.quantity, i.order_id FROM `item` i WHERE i.order_id=?"
-	COUNT_ORDERS      = "SELECT COUNT(*) FROM order"
+	COUNT_ORDERS      = "SELECT COUNT(*) FROM `order`"
 )
+
+func (o orderRepositoryImpl) CheckOrders(ctx context.Context) (int, error) {
+	query := COUNT_ORDERS
+
+	stmt, err := o.db.PrepareContext(ctx, query)
+	if err != nil {
+		log.Printf("[CheckOrders] failed to prepare the statement, err => %v", err)
+		return 0, err
+	}
+
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		log.Printf("[CheckOrders] failed to query to the database, err => %v", err)
+		return 0, err
+	}
+
+	var orderCount int
+
+	for rows.Next() {
+		err := rows.Scan(
+			&orderCount,
+		)
+		if err != nil {
+			log.Printf("[CheckOrders] failed to scan data from database, err => %v", err)
+			return 0, err
+		}
+	}
+	return orderCount, nil
+}
 
 func (o orderRepositoryImpl) ViewAllOrders(ctx context.Context) (entity.OrdersJoined, error) {
 	query := SELECT_ORDERS
