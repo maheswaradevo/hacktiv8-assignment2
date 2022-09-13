@@ -2,6 +2,7 @@ package entity
 
 import "time"
 
+// Orders represent the model for an order
 type Orders struct {
 	OrderID      uint64    `db:"order_id"`
 	CustomerName string    `db:"customer_name"`
@@ -9,6 +10,7 @@ type Orders struct {
 	UpdatedAt    time.Time `db:"updated_at"`
 }
 
+// Items represent the model for an item in the order
 type Items struct {
 	ItemId      uint64    `db:"item_id"`
 	ItemCode    string    `db:"item_code"`

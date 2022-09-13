@@ -31,6 +31,15 @@ func ProvideOrderHandler(r *mux.Router, os OrderService) *OrderHandler {
 	}
 }
 
+// CreateNewOrder godoc
+// @Summary Create a New Order
+// @Description Create a new order from request body as a JSON
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Param data body dto.CreateOrderRequest true "Create order"
+// @Success 200 {object} dto.OrderResponse
+// @Router /orders [post]
 func (o *OrderHandler) CreateNewOrder() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := dto.CreateOrderRequest{}
@@ -51,6 +60,14 @@ func (o *OrderHandler) CreateNewOrder() http.HandlerFunc {
 	}
 }
 
+// ViewAllOrders godoc
+// @Summary View all orders
+// @Description View all orders and return a JSON
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Success 200 {object} dto.OrderDetails
+// @Router /orders [get]
 func (o *OrderHandler) ViewAllOrders() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		res, err := o.os.ViewAllOrders(r.Context())
