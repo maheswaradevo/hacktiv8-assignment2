@@ -10,6 +10,7 @@ import (
 
 type OrderService interface {
 	CreateNewOrder(ctx context.Context, data *dto.CreateOrderRequest) (*dto.OrderResponse, error)
+	ViewAllOrders(ctx context.Context) (*dto.OrderDetails, error)
 }
 
 func ProvideOrderService(db *sql.DB) OrderService {
