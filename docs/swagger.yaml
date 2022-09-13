@@ -1,0 +1,98 @@
+basePath: /api/v1/
+definitions:
+  dto.CreateOrderRequest:
+    properties:
+      ItemsRequest:
+        items:
+          $ref: '#/definitions/dto.ItemRequest'
+        type: array
+      customer_name:
+        type: string
+    type: object
+  dto.ItemRequest:
+    properties:
+      description:
+        type: string
+      item_code:
+        type: string
+      quantity:
+        type: integer
+    type: object
+  dto.ItemsResponse:
+    properties:
+      description:
+        type: string
+      item_code:
+        type: string
+      item_id:
+        type: integer
+      order_id:
+        type: integer
+      quantity:
+        type: integer
+    type: object
+  dto.OrderResponse:
+    properties:
+      AllItems:
+        items:
+          $ref: '#/definitions/dto.ItemsResponse'
+        type: array
+      customer_name:
+        type: string
+      order_id:
+        type: integer
+      ordered_at:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: soberkoder@swagger.io
+    name: API Support
+  description: This is service to managing order
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/license/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Orders API
+  version: "1.0"
+paths:
+  /orders:
+    get:
+      consumes:
+      - application/json
+      description: View all orders and return a JSON
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.OrderResponse'
+            type: array
+      summary: View all orders
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      description: Create a new order from request body as a JSON
+      parameters:
+      - description: Create order
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OrderResponse'
+      summary: Create a New Order
+      tags:
+      - orders
+swagger: "2.0"
