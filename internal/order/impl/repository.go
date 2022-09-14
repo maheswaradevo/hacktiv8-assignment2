@@ -23,6 +23,7 @@ type OrderRepository interface {
 	ViewAllOrders(ctx context.Context) (entity.OrdersJoined, error)
 	CheckOrders(ctx context.Context) (int, error)
 	DeleteOrderByID(ctx context.Context, id uint64) (int, error)
+	UpdateOrderByID(ctx context.Context, id uint64, reqDataOrder *entity.Orders, reqDataItems entity.AllItems) (int, error)
 }
 
 var (
@@ -33,7 +34,64 @@ var (
 	COUNT_ORDERS      = "SELECT COUNT(*) FROM `order`"
 	DELETE_ORDER      = "DELETE FROM `order` WHERE order_id = ?"
 	DELETE_ITEMS      = "DELETE FROM `item` WHERE order_id = ?"
+	UPDATE_ORDER      = "UPDATE `order` SET customer_name = ? WHERE order_id = ?"
+	UPDATE_ITEM       = "UPDATE `item` SET description = ?, item_code = ?, quantity = ? WHERE order_id = ?"
 )
+
+func (o orderRepositoryImpl) UpdateOrderByID(ctx context.Context, id uint64, reqDataOrder *entity.Orders, reqDataItems entity.AllItems) (int, error) {
+	tx, err := o.db.BeginTx(ctx, nil)
+	if err != nil {
+		log.Printf("[UpdateOrderByID] failed to begin transaction, err => %v", err)
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	queryUpdateOrder := UPDATE_ORDER
+
+	stmt, err := tx.PrepareContext(ctx, queryUpdateOrder)
+	if err != nil {
+		log.Printf("[UpdateOrderByID] failed to prepare the statement, err => %v, id => %v", err, id)
+		return 0, err
+	}
+
+	rows, err := stmt.ExecContext(ctx,
+		reqDataOrder.CustomerName,
+		id,
+	)
+	if err != nil {
+		log.Printf("[UpdateOrderByID] failed to update the order data, err => %v, id => %v", err, id)
+		return 0, err
+	}
+
+	res, _ := rows.RowsAffected()
+
+	for _, items := range reqDataItems {
+		queryUpdateItem := UPDATE_ITEM
+
+		stmt, err = tx.PrepareContext(ctx, queryUpdateItem)
+		if err != nil {
+			log.Printf("[UpdateOrderByID] failed to prepare the statement, err => %v, id => %v", err, id)
+			return 0, nil
+		}
+
+		_, err = stmt.ExecContext(ctx,
+			items.Description,
+			items.ItemCode,
+			items.Quantity,
+			id,
+		)
+		if err != nil {
+			log.Printf("[UpdateOrderByID] failed to update the item data, err => %v, id => %v", err, id)
+			return 0, err
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.Printf("[UpdateOrderByID] transaction failed, err => %v", err)
+		return 0, err
+	}
+	return int(res), nil
+}
 
 func (o orderRepositoryImpl) DeleteOrderByID(ctx context.Context, id uint64) (int, error) {
 	tx, err := o.db.BeginTx(ctx, nil)

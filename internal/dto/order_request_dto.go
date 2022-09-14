@@ -4,6 +4,10 @@ import (
 	"github.com/maheswaradevo/hacktiv8-assignment2/internal/entity"
 )
 
+type UpdateOrderRequest struct {
+	CustomerName string `json:"customer_name"`
+	ItemsRequest `json:"items"`
+}
 type CreateOrderRequest struct {
 	CustomerName string `json:"customer_name"`
 	ItemsRequest `json:"items"`
@@ -31,5 +35,23 @@ func (dto *CreateOrderRequest) ToEntity() (item entity.AllItems, order entity.Or
 	order = entity.Orders{
 		CustomerName: dto.CustomerName,
 	}
+	return
+}
+
+func (dto *UpdateOrderRequest) ToEntity() (order entity.Orders, item entity.AllItems) {
+	order = entity.Orders{
+		CustomerName: dto.CustomerName,
+	}
+
+	item = entity.AllItems{}
+	for _, items := range dto.ItemsRequest {
+		itemsDetails := entity.Items{
+			ItemCode:    items.ItemCode,
+			Description: items.Description,
+			Quantity:    items.Quantity,
+		}
+		item = append(item, &itemsDetails)
+	}
+
 	return
 }

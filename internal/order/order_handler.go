@@ -24,6 +24,7 @@ func (o *OrderHandler) InitHandler() {
 	routes.HandleFunc("", o.createNewOrder()).Methods(http.MethodPost)
 	routes.HandleFunc("", o.viewAllOrders()).Methods(http.MethodGet)
 	routes.HandleFunc("/{order_id}", o.deleteOrderByID()).Methods(http.MethodDelete)
+	routes.HandleFunc("/{order_id}", o.updateOrderByID()).Methods(http.MethodPatch)
 }
 
 func ProvideOrderHandler(r *mux.Router, os OrderService) *OrderHandler {
@@ -33,7 +34,7 @@ func ProvideOrderHandler(r *mux.Router, os OrderService) *OrderHandler {
 	}
 }
 
-// createNewOrder godoc
+// CreateNewOrder godoc
 // @Summary Create a New Order
 // @Description Create a new order from request body as a JSON
 // @Tags orders
@@ -47,19 +48,19 @@ func (o *OrderHandler) createNewOrder() http.HandlerFunc {
 		data := dto.CreateOrderRequest{}
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			log.Printf("[CreateNewOrder] failed to parse JSON data, err => %+v", err)
+			log.Printf("[createNewOrder] failed to parse JSON data, err => %+v", err)
 			panic(err)
 		}
 		res, err := o.os.CreateNewOrder(r.Context(), &data)
 		if err != nil {
-			log.Printf("[CreateNewOrder] failed to create a new order, err => %v", err)
+			log.Printf("[createNewOrder] failed to create a new order, err => %v", err)
 			panic(err)
 		}
 		utils.NewBaseResponse(http.StatusCreated, "SUCCESS", nil, res).SendResponse(&w)
 	}
 }
 
-// viewAllOrders godoc
+// ViewAllOrders godoc
 // @Summary View all orders
 // @Description View all orders and return a JSON
 // @Tags orders
@@ -89,5 +90,27 @@ func (o *OrderHandler) deleteOrderByID() http.HandlerFunc {
 			panic(err)
 		}
 		utils.NewBaseResponse(http.StatusAccepted, "SUCCESS", nil, res).SendResponse(&w)
+	}
+}
+
+func (o *OrderHandler) updateOrderByID() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		routeVar := mux.Vars(r)
+		idVar := routeVar["order_id"]
+		idConv, _ := strconv.ParseUint(idVar, 10, 64)
+
+		data := new(dto.UpdateOrderRequest)
+		err := json.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			log.Printf("[updateOrderByID] failed to parse JSON data, err => %+v", err)
+			panic(err)
+		}
+
+		res, err := o.os.UpdateOrderByID(r.Context(), idConv, data)
+		if err != nil {
+			log.Printf("[updateOrderByID] failed to update the order by id, err => %v, id => %v", err, idConv)
+			panic(err)
+		}
+		utils.NewBaseResponse(http.StatusCreated, "SUCCESS", nil, res).SendResponse(&w)
 	}
 }

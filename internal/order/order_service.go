@@ -12,6 +12,7 @@ type OrderService interface {
 	CreateNewOrder(ctx context.Context, data *dto.CreateOrderRequest) (*dto.OrderResponse, error)
 	ViewAllOrders(ctx context.Context) (*dto.OrderDetails, error)
 	DeleteOrderByID(ctx context.Context, id uint64) (int, error)
+	UpdateOrderByID(ctx context.Context, id uint64, data *dto.UpdateOrderRequest) (int, error)
 }
 
 func ProvideOrderService(db *sql.DB) OrderService {
