@@ -73,8 +73,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/dto.OrderResponse"
                         }
@@ -159,7 +159,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8080",
-	BasePath:         "/api/v1/",
+	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Orders API",
 	Description:      "This is service to managing order",

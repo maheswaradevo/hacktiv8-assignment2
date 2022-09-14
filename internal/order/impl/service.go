@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/maheswaradevo/hacktiv8-assignment2/internal/dto"
-	"github.com/maheswaradevo/hacktiv8-assignment2/pkg/utils"
 )
 
 type orderServiceImpl struct {
@@ -16,6 +15,25 @@ func ProvideOrderService(repo OrderRepository) *orderServiceImpl {
 	return &orderServiceImpl{
 		repo: repo,
 	}
+}
+
+func (o orderServiceImpl) DeleteOrderByID(ctx context.Context, id uint64) (int, error) {
+	check, err := o.repo.CheckOrders(ctx)
+	if err != nil {
+		log.Printf("[DeleteOrderByID] an error occured while checking orders, err => %v, id => %v", err, id)
+		return 0, nil
+	}
+	if check < 1 {
+		log.Printf("[DeleteOrderByID] theres is no orders data, err => %v", err)
+		panic(err)
+	}
+	res, err := o.repo.DeleteOrderByID(ctx, id)
+	if err != nil {
+		log.Printf("[DeleteOrderByID] an error occured while deleting orders, err => %v, id => %v", err, id)
+		return 0, nil
+	}
+
+	return res, nil
 }
 
 func (o orderServiceImpl) CreateNewOrder(ctx context.Context, data *dto.CreateOrderRequest) (*dto.OrderResponse, error) {
@@ -37,13 +55,7 @@ func (o orderServiceImpl) ViewAllOrders(ctx context.Context) (*dto.OrderDetails,
 	}
 	if count < 1 {
 		log.Printf("[ViewAllOrders] theres is no orders data, err => %v", err)
-		panic(
-			utils.NewErrorResponse(
-				494,
-				"DATA_NOT_EXISTS",
-				utils.NewErrorResponseValue("orders", "does not exists"),
-			),
-		)
+		panic(err)
 
 	}
 	res, err := o.repo.ViewAllOrders(ctx)
