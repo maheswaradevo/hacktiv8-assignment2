@@ -1,4 +1,4 @@
-basePath: /api/v1/
+basePath: /
 definitions:
   dto.CreateOrderRequest:
     properties:
@@ -88,8 +88,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/dto.OrderResponse'
       summary: Create a New Order

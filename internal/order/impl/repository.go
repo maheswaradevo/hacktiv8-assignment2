@@ -22,6 +22,7 @@ type OrderRepository interface {
 	CreateNewOrder(ctx context.Context, reqDataOrder entity.Orders, reqDataItems entity.AllItems) (uint64, error)
 	ViewAllOrders(ctx context.Context) (entity.OrdersJoined, error)
 	CheckOrders(ctx context.Context) (int, error)
+	DeleteOrderByID(ctx context.Context, id uint64) (int, error)
 }
 
 var (
@@ -30,7 +31,38 @@ var (
 	SELECT_ORDERS     = "SELECT o.order_id, o.customer_name, o.created_at, o.updated_at FROM `order` o"
 	SELECT_ITEMS      = "SELECT i. item_id, i.item_code, i.description, i.quantity, i.order_id FROM `item` i WHERE i.order_id=?"
 	COUNT_ORDERS      = "SELECT COUNT(*) FROM `order`"
+	DELETE_ORDER      = "DELETE FROM `order` WHERE order_id = ?"
+	DELETE_ITEMS      = "DELETE FROM `item` WHERE order_id = ?"
 )
+
+func (o orderRepositoryImpl) DeleteOrderByID(ctx context.Context, id uint64) (int, error) {
+	tx, err := o.db.BeginTx(ctx, nil)
+	if err != nil {
+		log.Printf("[DeleteOrderByID] failed to begin transaction, err => %v", err)
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	queryDeleteItem := DELETE_ITEMS
+	_, err = o.db.Query(queryDeleteItem, id)
+	if err != nil {
+		log.Printf("[DeleteByOrderID] failed to delete item data, err => %v", err)
+		return 0, err
+	}
+
+	queryDeleteOrder := DELETE_ORDER
+	_, err = o.db.Query(queryDeleteOrder, id)
+	if err != nil {
+		log.Printf("[DeleteOrderByID] failed to delete order data, err => %v", err)
+		return 0, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.Printf("[DeleteOrderByID] transaction failed, err => %v", err)
+		return 0, err
+	}
+	return int(id), nil
+}
 
 func (o orderRepositoryImpl) CheckOrders(ctx context.Context) (int, error) {
 	query := COUNT_ORDERS
