@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/maheswaradevo/hacktiv8-assignment2/internal/entity"
+	"github.com/maheswaradevo/hacktiv8-assignment2/internal/global/config"
 )
 
 type orderRepositoryImpl struct {
@@ -43,8 +44,6 @@ var (
 	UPDATE_ORDER        = "UPDATE `order` SET customer_name = ? WHERE order_id = ?"
 	UPDATE_ITEM         = "UPDATE item SET description = ?, item_code = ?, quantity = ? WHERE item_id = ?"
 )
-
-var baseUrl = "https://hiyaa.site/data.php?qty=2&apikey=7f8fc96e-de1f-4aab-9c62-3dd1de365e66"
 
 func (o orderRepositoryImpl) GetOrdersByID(ctx context.Context, id uint64) (entity.OrdersItemsJoined, error) {
 	query := SELECT_ORDERS_BY_ID
@@ -145,10 +144,11 @@ func (o orderRepositoryImpl) GetOrdersByID(ctx context.Context, id uint64) (enti
 
 func (o orderRepositoryImpl) FetchPerson() (entity.Person, error) {
 	client := &http.Client{}
-
 	people := entity.Person{}
 
-	request, err := http.NewRequest(http.MethodGet, baseUrl, nil)
+	url := config.GetConfig().BaseUrl
+
+	request, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -163,7 +163,6 @@ func (o orderRepositoryImpl) FetchPerson() (entity.Person, error) {
 	if err != nil {
 		panic(err)
 	}
-	log.Println(people)
 	return people, nil
 }
 
@@ -177,7 +176,7 @@ func (o orderRepositoryImpl) UpdateOrderByID(ctx context.Context, id uint64, req
 		return err
 	}
 
-	rows, err := stmt.ExecContext(
+	_, err = stmt.ExecContext(
 		ctx,
 		reqDataOrder.CustomerName,
 		id,
@@ -187,15 +186,14 @@ func (o orderRepositoryImpl) UpdateOrderByID(ctx context.Context, id uint64, req
 		return err
 	}
 
-	res1, _ := rows.RowsAffected()
-
 	for _, items := range reqDataItems {
 		stmt, err = o.db.PrepareContext(ctx, queryItems)
 		if err != nil {
 			log.Printf("[UpdateOrderByID] failed to prepare the statement, err => %v", err)
 			return err
 		}
-		rows, err = stmt.Exec(
+		_, err = stmt.ExecContext(
+			ctx,
 			items.Description,
 			items.ItemCode,
 			items.Quantity,
@@ -205,9 +203,6 @@ func (o orderRepositoryImpl) UpdateOrderByID(ctx context.Context, id uint64, req
 			log.Printf("[UpdateOrderByID] failed to update the data, err => %v", err)
 			return err
 		}
-
-		res2, _ := rows.RowsAffected()
-		res1 = res1 + res2
 	}
 	return nil
 }

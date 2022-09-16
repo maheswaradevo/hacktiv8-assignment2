@@ -10,6 +10,7 @@ import (
 type Config struct {
 	ServerAddress string
 	Database      Database
+	BaseUrl       string
 }
 
 type Database struct {
@@ -29,6 +30,7 @@ func Init() {
 	}
 
 	config.ServerAddress = os.Getenv("SERVER_ADDRESS")
+	config.BaseUrl = os.Getenv("BASE_URL")
 	config.Database.Username = os.Getenv("DB_USERNAME")
 	config.Database.Password = os.Getenv("DB_PASSWORD")
 	config.Database.Address = os.Getenv("DB_ADDRESS")

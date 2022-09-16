@@ -19,28 +19,6 @@ type ItemUpdateResponse struct {
 	Quantity    uint64 `json:"quantity"`
 }
 
-type ItemsUpdate []ItemUpdateResponse
-
-func CreateItemUpdateResponse(i entity.Items) ItemUpdateResponse {
-	return ItemUpdateResponse{
-		ItemID:      i.ItemId,
-		ItemCode:    i.ItemCode,
-		Description: i.Description,
-		Quantity:    i.Quantity,
-	}
-}
-
-func CreateUpdateResponse(o entity.Orders, is entity.AllItems) *UpdateOrdersByIDResponse {
-	updateDetails := UpdateOrdersByIDResponse{}
-	updateDetails.CustomerName = o.CustomerName
-	updateDetails.UpdatedAt = time.Now()
-	for idx := range is {
-		allItems := CreateItemUpdateResponse(*is[idx])
-		updateDetails.ItemsUpdate = append(updateDetails.ItemsUpdate, allItems)
-	}
-	return &updateDetails
-}
-
 type PersonResponse struct {
 	FirstName     string `json:"first_name"`
 	LastName      string `json:"last_name"`
@@ -68,6 +46,16 @@ type ItemsResponse struct {
 
 type OrderDetails []OrderResponse
 type AllItems []ItemsResponse
+type ItemsUpdate []ItemUpdateResponse
+
+func CreateItemUpdateResponse(i entity.Items) ItemUpdateResponse {
+	return ItemUpdateResponse{
+		ItemID:      i.ItemId,
+		ItemCode:    i.ItemCode,
+		Description: i.Description,
+		Quantity:    i.Quantity,
+	}
+}
 
 func CreatePersonOrderResponse(p entity.Person) PersonResponse {
 	return PersonResponse{
@@ -95,6 +83,17 @@ func CreateItemsResponse(item entity.Items) ItemsResponse {
 	}
 }
 
+func CreateUpdateResponse(o entity.Orders, is entity.AllItems) *UpdateOrdersByIDResponse {
+	updateDetails := UpdateOrdersByIDResponse{}
+	updateDetails.CustomerName = o.CustomerName
+	updateDetails.UpdatedAt = time.Now()
+	for idx := range is {
+		allItems := CreateItemUpdateResponse(*is[idx])
+		updateDetails.ItemsUpdate = append(updateDetails.ItemsUpdate, allItems)
+	}
+	return &updateDetails
+}
+
 func CreatePersonOrdersResponse(os entity.OrdersItemsJoined, p entity.Person) *PersonResponse {
 	personOrdersDetails := CreatePersonOrderResponse(p)
 	personOrdersDetails.OrderResponse = viewOrderResponse(os)
@@ -113,6 +112,16 @@ func CreateOrderResponseDetail(o entity.Orders, is entity.AllItems, id uint64) *
 	return &orderDetails
 }
 
+func ViewOrderResponseDetails(os entity.OrdersJoined) []OrderResponse {
+	var orderDetails []OrderResponse
+
+	for _, each := range os {
+		order := viewOrderResponse(*each)
+		orderDetails = append(orderDetails, order)
+	}
+	return orderDetails
+}
+
 func viewOrderResponse(os entity.OrdersItemsJoined) OrderResponse {
 	var listItems AllItems
 
@@ -127,14 +136,4 @@ func viewOrderResponse(os entity.OrdersItemsJoined) OrderResponse {
 		CreatedAt:    os.CreatedAt,
 		AllItems:     listItems,
 	}
-}
-
-func ViewOrderResponseDetails(os entity.OrdersJoined) []OrderResponse {
-	var orderDetails []OrderResponse
-
-	for _, each := range os {
-		order := viewOrderResponse(*each)
-		orderDetails = append(orderDetails, order)
-	}
-	return orderDetails
 }
