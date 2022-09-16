@@ -14,6 +14,7 @@ type CreateOrderRequest struct {
 }
 
 type ItemRequest struct {
+	ItemID      uint64 `json:"item_id"`
 	ItemCode    string `json:"item_code"`
 	Description string `json:"description"`
 	Quantity    uint64 `json:"quantity"`
@@ -46,6 +47,7 @@ func (dto *UpdateOrderRequest) ToEntity() (order entity.Orders, item entity.AllI
 	item = entity.AllItems{}
 	for _, items := range dto.ItemsRequest {
 		itemsDetails := entity.Items{
+			ItemId:      items.ItemID,
 			ItemCode:    items.ItemCode,
 			Description: items.Description,
 			Quantity:    items.Quantity,

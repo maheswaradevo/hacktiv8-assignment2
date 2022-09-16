@@ -24,7 +24,8 @@ func (o *OrderHandler) InitHandler() {
 	routes.HandleFunc("", o.createNewOrder()).Methods(http.MethodPost)
 	routes.HandleFunc("", o.viewAllOrders()).Methods(http.MethodGet)
 	routes.HandleFunc("/{order_id}", o.deleteOrderByID()).Methods(http.MethodDelete)
-	routes.HandleFunc("/{order_id}", o.updateOrderByID()).Methods(http.MethodPatch)
+	routes.HandleFunc("/{order_id}", o.updateOrderByID()).Methods(http.MethodPut)
+	routes.HandleFunc("/person/{order_id}", o.getPersonOrders()).Methods(http.MethodGet)
 }
 
 func ProvideOrderHandler(r *mux.Router, os OrderService) *OrderHandler {
@@ -112,5 +113,19 @@ func (o *OrderHandler) updateOrderByID() http.HandlerFunc {
 			panic(err)
 		}
 		utils.NewBaseResponse(http.StatusCreated, "SUCCESS", nil, res).SendResponse(&w)
+	}
+}
+
+func (o *OrderHandler) getPersonOrders() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		routeVar := mux.Vars(r)
+		idVar := routeVar["order_id"]
+		idConv, _ := strconv.ParseUint(idVar, 10, 64)
+
+		res, err := o.os.PersonOrders(r.Context(), idConv)
+		if err != nil {
+			panic(err)
+		}
+		utils.NewBaseResponse(http.StatusOK, "SUCCESS", nil, res).SendResponse(&w)
 	}
 }

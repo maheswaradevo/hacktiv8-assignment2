@@ -3,7 +3,9 @@ package impl
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"log"
+	"net/http"
 
 	"github.com/maheswaradevo/hacktiv8-assignment2/internal/entity"
 )
@@ -23,74 +25,191 @@ type OrderRepository interface {
 	ViewAllOrders(ctx context.Context) (entity.OrdersJoined, error)
 	CheckOrders(ctx context.Context) (int, error)
 	DeleteOrderByID(ctx context.Context, id uint64) (int, error)
-	UpdateOrderByID(ctx context.Context, id uint64, reqDataOrder *entity.Orders, reqDataItems entity.AllItems) (int, error)
+	UpdateOrderByID(ctx context.Context, id uint64, reqDataOrder *entity.Orders, reqDataItems entity.AllItems) error
+	FetchPerson() (entity.Person, error)
+	GetOrdersByID(ctx context.Context, id uint64) (entity.OrdersItemsJoined, error)
 }
 
 var (
-	INSERT_ORDER_DATA = "INSERT INTO `order` (customer_name) VALUES (?)"
-	INSERT_ITEM_DATA  = "INSERT INTO `item` (item_code, description, quantity, order_id) VALUES(?, ?, ?, ?)"
-	SELECT_ORDERS     = "SELECT o.order_id, o.customer_name, o.created_at, o.updated_at FROM `order` o"
-	SELECT_ITEMS      = "SELECT i. item_id, i.item_code, i.description, i.quantity, i.order_id FROM `item` i WHERE i.order_id=?"
-	COUNT_ORDERS      = "SELECT COUNT(*) FROM `order`"
-	DELETE_ORDER      = "DELETE FROM `order` WHERE order_id = ?"
-	DELETE_ITEMS      = "DELETE FROM `item` WHERE order_id = ?"
-	UPDATE_ORDER      = "UPDATE `order` SET customer_name = ? WHERE order_id = ?"
-	UPDATE_ITEM       = "UPDATE `item` SET description = ?, item_code = ?, quantity = ? WHERE order_id = ?"
+	INSERT_ORDER_DATA   = "INSERT INTO `order` (customer_name) VALUES (?)"
+	INSERT_ITEM_DATA    = "INSERT INTO `item` (item_code, description, quantity, order_id) VALUES(?, ?, ?, ?)"
+	SELECT_ORDERS       = "SELECT o.order_id, o.customer_name, o.created_at, o.updated_at FROM `order` o"
+	SELECT_ORDERS_BY_ID = "SELECT o.order_id, o.customer_name, o.created_at, o.updated_at FROM `order` o WHERE o.order_id = ?"
+	SELECT_ITEMS        = "SELECT i.item_id, i.item_code, i.description, i.quantity, i.order_id FROM `item` i WHERE i.order_id=?"
+	COUNT_ORDERS        = "SELECT COUNT(*) FROM `order`"
+	COUNT_ITEMS         = "SELECT COUNT(*) FROM `item` i WHERE i.order_id = ?"
+	DELETE_ORDER        = "DELETE FROM `order` WHERE order_id = ?"
+	DELETE_ITEMS        = "DELETE FROM `item` WHERE order_id = ?"
+	UPDATE_ORDER        = "UPDATE `order` SET customer_name = ? WHERE order_id = ?"
+	UPDATE_ITEM         = "UPDATE item SET description = ?, item_code = ?, quantity = ? WHERE item_id = ?"
 )
 
-func (o orderRepositoryImpl) UpdateOrderByID(ctx context.Context, id uint64, reqDataOrder *entity.Orders, reqDataItems entity.AllItems) (int, error) {
+var baseUrl = "https://hiyaa.site/data.php?qty=2&apikey=7f8fc96e-de1f-4aab-9c62-3dd1de365e66"
+
+func (o orderRepositoryImpl) GetOrdersByID(ctx context.Context, id uint64) (entity.OrdersItemsJoined, error) {
+	query := SELECT_ORDERS_BY_ID
+
 	tx, err := o.db.BeginTx(ctx, nil)
 	if err != nil {
-		log.Printf("[UpdateOrderByID] failed to begin transaction, err => %v", err)
-		return 0, err
+		log.Printf("[GetOrdersByID] failed to begin transaction, err => %v", err)
+		return entity.OrdersItemsJoined{}, err
 	}
 	defer tx.Rollback()
 
-	queryUpdateOrder := UPDATE_ORDER
-
-	stmt, err := tx.PrepareContext(ctx, queryUpdateOrder)
+	stmt, err := tx.PrepareContext(ctx, query)
 	if err != nil {
-		log.Printf("[UpdateOrderByID] failed to prepare the statement, err => %v, id => %v", err, id)
-		return 0, err
+		log.Printf("[GetOrdersByID] failed to prepare the statement, err => %v", err)
+		return entity.OrdersItemsJoined{}, err
 	}
 
-	rows, err := stmt.ExecContext(ctx,
+	rows, err := stmt.QueryContext(ctx, id)
+	if err != nil {
+		log.Printf("[GetOrdersByID] failed to query to the database, err => %v", err)
+		return entity.OrdersItemsJoined{}, err
+	}
+
+	var orders entity.OrdersItemsJoined
+	for rows.Next() {
+		orderDetails := entity.OrdersItemsJoined{}
+
+		err := rows.Scan(
+			&orderDetails.Orders.OrderID,
+			&orderDetails.Orders.CustomerName,
+			&orderDetails.Orders.CreatedAt,
+			&orderDetails.Orders.UpdatedAt,
+		)
+		if err != nil {
+			log.Printf("[GetOrdersByID] failed to scan the data, err => %v", err)
+			return entity.OrdersItemsJoined{}, err
+		}
+		orders = orderDetails
+	}
+	countItems := COUNT_ITEMS
+
+	stmt, err = o.db.PrepareContext(ctx, countItems)
+	if err != nil {
+		log.Printf("[GetOrdersByID] failed to prepare the statement, err => %v", err)
+		return entity.OrdersItemsJoined{}, err
+	}
+
+	rows, err = stmt.QueryContext(ctx, id)
+	if err != nil {
+		log.Printf("[GetOrdersByID] failed to query to the database, err => %v", err)
+		return entity.OrdersItemsJoined{}, err
+	}
+
+	var itemCount int
+
+	for rows.Next() {
+		err := rows.Scan(
+			&itemCount,
+		)
+		if err != nil {
+			log.Printf("[GetOrdersByID] failed to scan the data, err => %v", err)
+			return entity.OrdersItemsJoined{}, err
+		}
+	}
+	queryItems := SELECT_ITEMS
+	for idx := 1; idx < itemCount; idx++ {
+		stmt, err := tx.PrepareContext(ctx, queryItems)
+		if err != nil {
+			log.Printf("[GetOrdersByID] failed to prepare the statement, err => %v", err)
+			return entity.OrdersItemsJoined{}, err
+		}
+
+		rows, err := stmt.QueryContext(ctx, orders.OrderID)
+		if err != nil {
+			log.Printf("[GetOrdersByID] failed to query to the database, err => %v", err)
+			return entity.OrdersItemsJoined{}, err
+		}
+
+		for rows.Next() {
+			allItems := entity.Items{}
+
+			err := rows.Scan(
+				&allItems.ItemId,
+				&allItems.ItemCode,
+				&allItems.Description,
+				&allItems.Quantity,
+				&allItems.OrderID,
+			)
+			if err != nil {
+				log.Printf("[GetOrdersByID] failed to scan the data, err => %v", err)
+				return entity.OrdersItemsJoined{}, err
+			}
+			orders.Items = append(orders.Items, &allItems)
+		}
+	}
+	return orders, nil
+}
+
+func (o orderRepositoryImpl) FetchPerson() (entity.Person, error) {
+	client := &http.Client{}
+
+	people := entity.Person{}
+
+	request, err := http.NewRequest(http.MethodGet, baseUrl, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	res, err := client.Do(request)
+	if err != nil {
+		panic(err)
+	}
+	defer res.Body.Close()
+
+	err = json.NewDecoder(res.Body).Decode(&people)
+	if err != nil {
+		panic(err)
+	}
+	log.Println(people)
+	return people, nil
+}
+
+func (o orderRepositoryImpl) UpdateOrderByID(ctx context.Context, id uint64, reqDataOrder *entity.Orders, reqDataItems entity.AllItems) error {
+	queryItems := UPDATE_ITEM
+	queryOrder := UPDATE_ORDER
+
+	stmt, err := o.db.PrepareContext(ctx, queryOrder)
+	if err != nil {
+		log.Printf("[UpdateOrderByID] failed to prepare the statement, err => %v", err)
+		return err
+	}
+
+	rows, err := stmt.ExecContext(
+		ctx,
 		reqDataOrder.CustomerName,
 		id,
 	)
 	if err != nil {
-		log.Printf("[UpdateOrderByID] failed to update the order data, err => %v, id => %v", err, id)
-		return 0, err
+		log.Printf("[UpdateOrderByID] failed to update the data, err => %v", err)
+		return err
 	}
 
-	res, _ := rows.RowsAffected()
+	res1, _ := rows.RowsAffected()
 
 	for _, items := range reqDataItems {
-		queryUpdateItem := UPDATE_ITEM
-
-		stmt, err = tx.PrepareContext(ctx, queryUpdateItem)
+		stmt, err = o.db.PrepareContext(ctx, queryItems)
 		if err != nil {
-			log.Printf("[UpdateOrderByID] failed to prepare the statement, err => %v, id => %v", err, id)
-			return 0, nil
+			log.Printf("[UpdateOrderByID] failed to prepare the statement, err => %v", err)
+			return err
 		}
-
-		_, err = stmt.ExecContext(ctx,
+		rows, err = stmt.Exec(
 			items.Description,
 			items.ItemCode,
 			items.Quantity,
-			id,
+			items.ItemId,
 		)
 		if err != nil {
-			log.Printf("[UpdateOrderByID] failed to update the item data, err => %v, id => %v", err, id)
-			return 0, err
+			log.Printf("[UpdateOrderByID] failed to update the data, err => %v", err)
+			return err
 		}
-	}
 
-	if err = tx.Commit(); err != nil {
-		log.Printf("[UpdateOrderByID] transaction failed, err => %v", err)
-		return 0, err
+		res2, _ := rows.RowsAffected()
+		res1 = res1 + res2
 	}
-	return int(res), nil
+	return nil
 }
 
 func (o orderRepositoryImpl) DeleteOrderByID(ctx context.Context, id uint64) (int, error) {
@@ -253,6 +372,7 @@ func (o orderRepositoryImpl) CreateNewOrder(ctx context.Context, reqDataOrder en
 			log.Printf("[CreateNewOrder] failed to insert items data, err => %v", err)
 			return 0, err
 		}
+
 		itemsID, _ := res.LastInsertId()
 		items.ItemId = uint64(itemsID)
 	}

@@ -107,6 +107,9 @@ const docTemplate = `{
                 "item_code": {
                     "type": "string"
                 },
+                "item_id": {
+                    "type": "integer"
+                },
                 "quantity": {
                     "type": "integer"
                 }
