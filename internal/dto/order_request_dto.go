@@ -8,6 +8,7 @@ type UpdateOrderRequest struct {
 	CustomerName string `json:"customer_name"`
 	ItemsRequest `json:"items"`
 }
+
 type CreateOrderRequest struct {
 	CustomerName string `json:"customer_name"`
 	ItemsRequest `json:"items"`
