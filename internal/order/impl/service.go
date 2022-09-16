@@ -17,6 +17,42 @@ func ProvideOrderService(repo OrderRepository) *orderServiceImpl {
 	}
 }
 
+func (o orderServiceImpl) PersonOrders(ctx context.Context, id uint64) (*dto.PersonResponse, error) {
+	person, err := o.repo.FetchPerson()
+	if err != nil {
+		panic(err)
+	}
+	orders, err := o.repo.GetOrdersByID(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+
+	response := dto.CreatePersonOrdersResponse(orders, person)
+	return response, nil
+}
+
+func (o orderServiceImpl) UpdateOrderByID(ctx context.Context, id uint64, data *dto.UpdateOrderRequest) (*dto.UpdateOrdersByIDResponse, error) {
+	check, err := o.repo.CheckOrders(ctx)
+	if err != nil {
+		log.Printf("[UpdateOrderByID] an error occured while checking orders, err => %v, id => %v", err, id)
+		return nil, err
+	}
+	if check < 1 {
+		log.Printf("[DeleteOrderByID] theres is no orders data, err => %v", err)
+		panic(err)
+	}
+
+	order, item := data.ToEntity()
+	err = o.repo.UpdateOrderByID(ctx, id, &order, item)
+	if err != nil {
+		log.Printf("[UpdateOrderByID] an error occured while updating orders, err => %v, id => %v", err, id)
+		return nil, err
+	}
+
+	response := dto.CreateUpdateResponse(order, item)
+	return response, nil
+}
+
 func (o orderServiceImpl) DeleteOrderByID(ctx context.Context, id uint64) (int, error) {
 	check, err := o.repo.CheckOrders(ctx)
 	if err != nil {

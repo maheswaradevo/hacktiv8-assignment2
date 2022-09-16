@@ -6,6 +6,51 @@ import (
 	"github.com/maheswaradevo/hacktiv8-assignment2/internal/entity"
 )
 
+type UpdateOrdersByIDResponse struct {
+	CustomerName string    `json:"customer_name"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	ItemsUpdate  `json:"items"`
+}
+
+type ItemUpdateResponse struct {
+	ItemID      uint64 `json:"item_id"`
+	ItemCode    string `json:"item_code"`
+	Description string `json:"description"`
+	Quantity    uint64 `json:"quantity"`
+}
+
+type ItemsUpdate []ItemUpdateResponse
+
+func CreateItemUpdateResponse(i entity.Items) ItemUpdateResponse {
+	return ItemUpdateResponse{
+		ItemID:      i.ItemId,
+		ItemCode:    i.ItemCode,
+		Description: i.Description,
+		Quantity:    i.Quantity,
+	}
+}
+
+func CreateUpdateResponse(o entity.Orders, is entity.AllItems) *UpdateOrdersByIDResponse {
+	updateDetails := UpdateOrdersByIDResponse{}
+	updateDetails.CustomerName = o.CustomerName
+	updateDetails.UpdatedAt = time.Now()
+	for idx := range is {
+		allItems := CreateItemUpdateResponse(*is[idx])
+		updateDetails.ItemsUpdate = append(updateDetails.ItemsUpdate, allItems)
+	}
+	return &updateDetails
+}
+
+type PersonResponse struct {
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
+	Username      string `json:"username"`
+	Phone         string `json:"phone"`
+	Email         string `json:"email"`
+	Uuid          string `json:"uuid"`
+	OrderResponse `json:"orders"`
+}
+
 type OrderResponse struct {
 	OrderID      uint64    `json:"order_id"`
 	CustomerName string    `json:"customer_name"`
@@ -24,6 +69,16 @@ type ItemsResponse struct {
 type OrderDetails []OrderResponse
 type AllItems []ItemsResponse
 
+func CreatePersonOrderResponse(p entity.Person) PersonResponse {
+	return PersonResponse{
+		FirstName: p.Result[0].Firstname,
+		LastName:  p.Result[0].Lastname,
+		Username:  p.Result[0].Username,
+		Email:     p.Result[0].Email,
+		Phone:     p.Result[0].Phone,
+		Uuid:      p.Result[0].UUID,
+	}
+}
 func CreateOrderResponse(order entity.Orders) OrderResponse {
 	return OrderResponse{
 		CustomerName: order.CustomerName,
@@ -38,6 +93,12 @@ func CreateItemsResponse(item entity.Items) ItemsResponse {
 		Description: item.Description,
 		Quantity:    item.Quantity,
 	}
+}
+
+func CreatePersonOrdersResponse(os entity.OrdersItemsJoined, p entity.Person) *PersonResponse {
+	personOrdersDetails := CreatePersonOrderResponse(p)
+	personOrdersDetails.OrderResponse = viewOrderResponse(os)
+	return &personOrdersDetails
 }
 
 func CreateOrderResponseDetail(o entity.Orders, is entity.AllItems, id uint64) *OrderResponse {
