@@ -10,7 +10,7 @@ import (
 
 type OrderService interface {
 	CreateNewOrder(ctx context.Context, data *dto.CreateOrderRequest) (*dto.OrderResponse, error)
-	ViewAllOrders(ctx context.Context) (*dto.OrderDetails, error)
+	ViewAllOrders(ctx context.Context) (*dto.ViewOrderResponses, error)
 	DeleteOrderByID(ctx context.Context, id uint64) (int, error)
 	UpdateOrderByID(ctx context.Context, id uint64, data *dto.UpdateOrderRequest) (*dto.UpdateOrdersByIDResponse, error)
 	PersonOrders(ctx context.Context, id uint64) (*dto.PersonResponse, error)
