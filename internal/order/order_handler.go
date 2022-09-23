@@ -14,23 +14,26 @@ import (
 
 type OrderHandler struct {
 	r  *mux.Router
+	p  *mux.Router
 	os OrderService
 }
 
 func (o *OrderHandler) InitHandler() {
 	routes := o.r.PathPrefix(constant.ORDER_API_PATH).Subrouter()
+	protected := o.p.Path(constant.ORDER_API_PATH).Subrouter()
 
 	//Order
-	routes.HandleFunc("", o.createNewOrder()).Methods(http.MethodPost)
+	protected.HandleFunc("", o.createNewOrder()).Methods(http.MethodPost)
 	routes.HandleFunc("", o.viewAllOrders()).Methods(http.MethodGet)
 	routes.HandleFunc("/{order_id}", o.deleteOrderByID()).Methods(http.MethodDelete)
 	routes.HandleFunc("/{order_id}", o.updateOrderByID()).Methods(http.MethodPut)
 	routes.HandleFunc("/person/{order_id}", o.getPersonOrders()).Methods(http.MethodGet)
 }
 
-func ProvideOrderHandler(r *mux.Router, os OrderService) *OrderHandler {
+func ProvideOrderHandler(r *mux.Router, p *mux.Router, os OrderService) *OrderHandler {
 	return &OrderHandler{
 		r:  r,
+		p:  p,
 		os: os,
 	}
 }

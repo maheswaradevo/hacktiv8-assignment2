@@ -3,7 +3,9 @@ package config
 import (
 	"log"
 	"os"
+	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/joho/godotenv"
 )
 
@@ -11,6 +13,10 @@ type Config struct {
 	ServerAddress string
 	Database      Database
 	BaseUrl       string
+
+	JWT_EXP            time.Duration
+	JWT_SIGNING_METHOD jwt.SigningMethod
+	JWT_SECRET_KEY     string
 }
 
 type Database struct {
@@ -36,6 +42,10 @@ func Init() {
 	config.Database.Address = os.Getenv("DB_ADDRESS")
 	config.Database.Port = os.Getenv("DB_PORT")
 	config.Database.Name = os.Getenv("DB_NAME")
+
+	config.JWT_EXP = time.Duration(120) * time.Hour
+	config.JWT_SIGNING_METHOD = jwt.SigningMethodHS256
+	config.JWT_SECRET_KEY = os.Getenv("JWT_SCRET_KEY")
 }
 
 func GetConfig() *Config {
